@@ -8,14 +8,14 @@
         body { font-family: 'Hind Siliguri', Arial, sans-serif; background-color: #1a2a25; color: #eaf0ed; margin: 0; padding: 20px; }
         .container { max-width: 800px; margin: auto; background-color: #243b34; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
         h1, h2, h3 { text-align: center; color: #81c784; border-bottom: 2px solid #81c784; padding-bottom: 10px; margin-bottom: 20px; }
-        button, select, input, textarea { padding: 12px; font-size: 1em; border-radius: 5px; border: 1px solid #4a6b5f; background-color: #1a2a25; color: #eaf0ed; margin-bottom: 10px; }
+        button, select, input, textarea { padding: 12px; font-size: 1em; border-radius: 5px; border: 1px solid #4a6b5f; background-color: #1a2a25; color: #eaf0ed; margin-bottom: 10px; box-sizing: border-box; }
         button { background-color: #81c784; color: #1a2a25; font-weight: bold; cursor: pointer; border: none; }
 
         /* --- সব সেকশনের জন্য সাধারণ স্টাইল --- */
-        .admin-section { display: none; } /* ডিফল্টভাবে সব সেকশন লুকানো */
+        .admin-section { display: none; }
         .form-container { background: #2f5247; padding: 20px; border-radius: 8px; margin-top: 20px; }
-        .form-container input, .form-container select, .form-container textarea { width: 95%; }
-        #form-message { text-align: center; font-weight: bold; margin-top: 15px; height: 20px; }
+        .form-container input, .form-container select, .form-container textarea { width: 100%; }
+        #transaction-form-message, #member-form-message { text-align: center; font-weight: bold; margin-top: 15px; height: 20px; }
 
         /* --- নির্দিষ্ট সেকশনের স্টাইল --- */
         .summary-cards { display: flex; justify-content: space-around; gap: 20px; flex-wrap: wrap; }
@@ -26,12 +26,18 @@
         #loader { text-align: center; font-size: 1.2em; padding: 40px; }
         .admin-controls { text-align: center; margin: 30px 0; }
         #admin-status { text-align: center; margin-bottom: 20px; color: #4db6ac; font-weight: bold; display: none; }
-        #admin-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        #admin-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         #admin-tabs button { background-color: #2f5247; color: #a5d6a7; }
         #admin-tabs button.active { background-color: #81c784; color: #1a2a25; }
         .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .data-table th, .data-table td { padding: 10px; text-align: left; border-bottom: 1px solid #4a6b5f; }
         .data-table th { color: #a5d6a7; }
+
+        /* লগইন মডেল */
+        .modal-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #243b34; padding: 30px; border-radius: 10px; text-align: center; }
+        .modal-content input { width: 250px; }
+        #error-message { color: #ef5050; height: 20px; }
     </style>
 </head>
 <body>
@@ -58,10 +64,7 @@
                 <button onclick="showSection('member-list-section')">সদস্য তালিকা</button>
             </div>
 
-            <div id="dashboard-section" class="admin-section" style="display: block;">
-                <h2>অ্যাডমিন ড্যাশবোর্ড</h2>
-                <div id="admin-summary"></div>
-            </div>
+            <div id="dashboard-section" class="admin-section"><h2>অ্যাডমিন ড্যাশবোর্ড</h2><div id="admin-summary"></div></div>
 
             <div id="add-transaction-section" class="admin-section">
                 <h2>নতুন লেনদেন যোগ করুন</h2>
@@ -71,7 +74,7 @@
                         <select id="form-type" required><option value="Income">Income</option><option value="Expense">Expense</option></select>
                         <select id="form-member"><option value="">সদস্য নির্বাচন করুন (ঐচ্ছিক)</option></select>
                         <input type="text" id="form-category" placeholder="খাত (যেমন: সদস্য ফি)" required>
-                        <input type="number" id="form-amount" placeholder="টাকার পরিমাণ" required>
+                        <input type="number" step="any" id="form-amount" placeholder="টাকার পরিমাণ" required>
                         <textarea id="form-description" placeholder="সংক্ষিপ্ত বিবরণ"></textarea>
                         <button type="submit">সেভ করুন</button>
                     </form>
@@ -108,27 +111,123 @@
         </div>
     </div>
 
-    <div id="login-modal" class="modal-bg" style="display:none;">
+    <div id="login-modal" class="modal-bg">
+        <div class="modal-content">
+            <h3>অ্যাডমিন লগইন</h3>
+            <input type="password" id="password" placeholder="পাসওয়ার্ড দিন"><br>
+            <button onclick="handleLogin()">প্রবেশ করুন</button>
+            <button onclick="hideLogin()" style="background-color: #aaa; margin-left: 10px;">বন্ধ করুন</button>
+            <p id="error-message"></p>
         </div>
+    </div>
 
     <script>
         // !! এখানে আপনার নতুন Web App URL এবং পাসওয়ার্ড দিন !!
         const API_URL = 'https://script.google.com/macros/s/AKfycbwWU7Jca63OVStCiTq8kO4sXk8jS1i1MXU1wTAWYSKixtKTz_DJ5VwfKYveS_jqELaC8g/exec';
-        const PASSWORD = 'admin123';
+        const PASSWORD = "admin123";
+
+        // --- DOM Elements ---
+        const publicView = document.getElementById('public-view');
+        const adminView = document.getElementById('admin-view');
+        const adminStatus = document.getElementById('admin-status');
+        const loader = document.getElementById('loader');
+        const loginModal = document.getElementById('login-modal');
 
         // --- Main App Logic ---
         document.addEventListener('DOMContentLoaded', loadPublicData);
 
-        function loadPublicData() { /* Loads financial summary for everyone */ }
-        function loadAdminData() { /* Loads member lists for admin forms */ }
-        function showLogin() { /* Shows login modal */ }
-        function handleLogin() { /* Handles login and shows admin view */ }
-        function handleLogout() { /* Handles logout and shows public view */ }
-        function showSection(sectionId) { /* Handles admin panel tabs */ }
-        function handleTransactionSubmit(event) { /* Submits new transaction */ }
-        function handleMemberSubmit(event) { /* Submits new member */ }
+        function showLogin() { loginModal.style.display = 'flex'; }
+        function hideLogin() { loginModal.style.display = 'none'; document.getElementById('password').value = ''; document.getElementById('error-message').textContent = ''; }
 
-        // --- Function Implementations (Copy the full script below) ---
-    </script>
-</body>
-</html>
+        function handleLogin() {
+            if (document.getElementById('password').value === PASSWORD) {
+                publicView.style.display = 'none';
+                adminView.style.display = 'block';
+                adminStatus.textContent = "আপনি অ্যাডমিন হিসেবে লগইন করেছেন।";
+                adminStatus.style.display = 'block';
+                hideLogin();
+                loadAdminData();
+                showSection('dashboard-section');
+            } else {
+                document.getElementById('error-message').textContent = 'ভুল পাসওয়ার্ড!';
+            }
+        }
+
+        function handleLogout() {
+            publicView.style.display = 'block';
+            adminView.style.display = 'none';
+            adminStatus.style.display = 'none';
+        }
+
+        function showSection(sectionIdToShow) {
+            document.querySelectorAll('.admin-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(sectionIdToShow).style.display = 'block';
+
+            document.querySelectorAll('#admin-tabs button').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.querySelector(`#admin-tabs button[onclick="showSection('${sectionIdToShow}')"]`).classList.add('active');
+        }
+
+        async function loadPublicData() {
+            loader.textContent = 'ডেটা লোড হচ্ছে...';
+            loader.style.display = 'block';
+            try {
+                const response = await fetch(`${API_URL}?action=getTransactions`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                let totalIncome = 0, totalExpense = 0;
+                if (Array.isArray(data)) {
+                    data.forEach(t => {
+                        if (t.type === 'Income' && !isNaN(t.amount)) totalIncome += parseFloat(t.amount);
+                        else if (t.type === 'Expense' && !isNaN(t.amount)) totalExpense += parseFloat(t.amount);
+                    });
+                }
+                const balance = totalIncome - totalExpense;
+                document.getElementById('total-income').textContent = `৳ ${totalIncome.toLocaleString('bn-BD')}`;
+                document.getElementById('total-expense').textContent = `৳ ${totalExpense.toLocaleString('bn-BD')}`;
+                document.getElementById('current-balance').textContent = `৳ ${balance.toLocaleString('bn-BD')}`;
+                document.getElementById('admin-summary').innerHTML = document.getElementById('public-report').innerHTML;
+                loader.style.display = 'none';
+            } catch (error) {
+                console.error('Error fetching public data:', error);
+                loader.textContent = 'ডেটা লোড করা যায়নি।';
+            }
+        }
+
+        async function loadAdminData() {
+            try {
+                const response = await fetch(`${API_URL}?action=getMembers`);
+                const members = await response.json();
+                if (members.error) throw new Error(members.error);
+
+                const memberDropdown = document.getElementById('form-member');
+                const memberListBody = document.getElementById('member-list-body');
+                memberDropdown.innerHTML = '<option value="">সদস্য নির্বাচন করুন (ঐচ্ছিক)</option>';
+                memberListBody.innerHTML = '';
+
+                members.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.member_id;
+                    option.textContent = `${member.name} (${member.member_id})`;
+                    memberDropdown.appendChild(option);
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${member.member_id}</td><td>${member.name}</td>`;
+                    memberListBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching members:', error);
+            }
+        }
+
+        async function handleTransactionSubmit(event) {
+            event.preventDefault();
+            const messageEl = document.getElementById('transaction-form-message');
+            const submitBtn = event.target.querySelector('button');
+            submitBtn.disabled = true;
+
+            const data = { action
