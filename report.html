@@ -52,24 +52,24 @@
                     <div class="card"><h3>বর্তমান ব্যালেন্স</h3><p id="current-balance">৳ ০</p></div>
                 </div>
             </div>
-            <div class="admin-controls"><button id="login-btn" onclick="showLogin()">অ্যাডমিন লগইন</button></div>
+            <div class="admin-controls"><button id="login-btn">অ্যাডমিন লগইন</button></div>
         </div>
 
         <div id="admin-view" style="display:none;">
             <div id="admin-status"></div>
             <div id="admin-tabs">
-                <button onclick="showSection('dashboard-section')" class="active">ড্যাশবোর্ড</button>
-                <button onclick="showSection('add-transaction-section')">লেনদেন যোগ</button>
-                <button onclick="showSection('add-member-section')">সদস্য যোগ</button>
-                <button onclick="showSection('member-list-section')">সদস্য তালিকা</button>
+                <button data-section="dashboard-section" class="active">ড্যাশবোর্ড</button>
+                <button data-section="add-transaction-section">লেনদেন যোগ</button>
+                <button data-section="add-member-section">সদস্য যোগ</button>
+                <button data-section="member-list-section">সদস্য তালিকা</button>
             </div>
 
-            <div id="dashboard-section" class="admin-section"><h2>অ্যাডমিন ড্যাশবোর্ড</h2><div id="admin-summary"></div></div>
+            <div id="dashboard-section" class="admin-section" style="display: block;"><h2>অ্যাডমিন ড্যাশবোর্ড</h2><div id="admin-summary"></div></div>
 
             <div id="add-transaction-section" class="admin-section">
                 <h2>নতুন লেনদেন যোগ করুন</h2>
                 <div class="form-container">
-                    <form id="transaction-form" onsubmit="handleTransactionSubmit(event)">
+                    <form id="transaction-form">
                         <input type="date" id="form-date" required>
                         <select id="form-type" required><option value="Income">Income</option><option value="Expense">Expense</option></select>
                         <select id="form-member"><option value="">সদস্য নির্বাচন করুন (ঐচ্ছিক)</option></select>
@@ -85,7 +85,7 @@
             <div id="add-member-section" class="admin-section">
                 <h2>নতুন সদস্য যোগ করুন</h2>
                 <div class="form-container">
-                    <form id="member-form" onsubmit="handleMemberSubmit(event)">
+                    <form id="member-form">
                         <input type="text" id="member-name" placeholder="সদস্যের নাম" required>
                         <input type="text" id="member-father" placeholder="পিতার নাম" required>
                         <textarea id="member-address" placeholder="ঠিকানা" required></textarea>
@@ -102,12 +102,19 @@
             <div id="member-list-section" class="admin-section">
                 <h2>সকল সদস্যদের তালিকা</h2>
                 <table class="data-table">
-                    <thead><tr><th>সদস্য আইডি</th><th>নাম</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>সদস্য আইডি</th>
+                            <th>নাম</th>
+                            <th>সদস্য ধরন</th>
+                            <th>ফোন নাম্বার</th>
+                        </tr>
+                    </thead>
                     <tbody id="member-list-body"></tbody>
                 </table>
             </div>
 
-            <div class="admin-controls"><button id="logout-btn" onclick="handleLogout()" style="background-color: #ef5050;">লগ-আউট</button></div>
+            <div class="admin-controls"><button id="logout-btn" style="background-color: #ef5050;">লগ-আউট</button></div>
         </div>
     </div>
 
@@ -115,15 +122,15 @@
         <div class="modal-content">
             <h3>অ্যাডমিন লগইন</h3>
             <input type="password" id="password" placeholder="পাসওয়ার্ড দিন"><br>
-            <button onclick="handleLogin()">প্রবেশ করুন</button>
-            <button onclick="hideLogin()" style="background-color: #aaa; margin-left: 10px;">বন্ধ করুন</button>
+            <button id="modal-login-btn">প্রবেশ করুন</button>
+            <button id="modal-close-btn" style="background-color: #aaa; margin-left: 10px;">বন্ধ করুন</button>
             <p id="error-message"></p>
         </div>
     </div>
 
     <script>
         // !! এখানে আপনার নতুন Web App URL এবং পাসওয়ার্ড দিন !!
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzoihtU-kEXcX0y64sX0ZtbUEbH3AZZGIFPJKo02KzxDt5f-yRQVOmTF46U_PdpYpo2jQ/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxu4nvtcbdtWbIOOHS56m59OV_1TBBLBJhiZdHLUJs5ZLeXEivI6bz9ICYwOmVKCQAdtQ/exec';
         const PASSWORD = "bm1997";
 
         // --- DOM Elements ---
@@ -133,9 +140,24 @@
         const loader = document.getElementById('loader');
         const loginModal = document.getElementById('login-modal');
 
-        // --- Main App Logic ---
-        document.addEventListener('DOMContentLoaded', loadPublicData);
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPublicData();
+            document.getElementById('login-btn').addEventListener('click', showLogin);
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            document.getElementById('modal-login-btn').addEventListener('click', handleLogin);
+            document.getElementById('modal-close-btn').addEventListener('click', hideLogin);
+            document.getElementById('transaction-form').addEventListener('submit', handleTransactionSubmit);
+            document.getElementById('member-form').addEventListener('submit', handleMemberSubmit);
 
+            document.querySelectorAll('#admin-tabs button').forEach(button => {
+                button.addEventListener('click', () => {
+                    showSection(button.dataset.section);
+                });
+            });
+        });
+
+        // --- Functions ---
         function showLogin() { loginModal.style.display = 'flex'; }
         function hideLogin() { loginModal.style.display = 'none'; document.getElementById('password').value = ''; document.getElementById('error-message').textContent = ''; }
 
@@ -164,11 +186,10 @@
                 section.style.display = 'none';
             });
             document.getElementById(sectionIdToShow).style.display = 'block';
-
             document.querySelectorAll('#admin-tabs button').forEach(button => {
                 button.classList.remove('active');
             });
-            document.querySelector(`#admin-tabs button[onclick="showSection('${sectionIdToShow}')"]`).classList.add('active');
+            document.querySelector(`#admin-tabs button[data-section='${sectionIdToShow}']`).classList.add('active');
         }
 
         async function loadPublicData() {
@@ -176,7 +197,7 @@
             loader.style.display = 'block';
             try {
                 const response = await fetch(`${API_URL}?action=getTransactions`);
-                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+                if (!response.ok) throw new Error(`Network response error`);
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
 
@@ -199,10 +220,11 @@
             }
         }
 
+        // !! পরিবর্তিত loadAdminData ফাংশন !!
         async function loadAdminData() {
             try {
                 const response = await fetch(`${API_URL}?action=getMembers`);
-                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+                if (!response.ok) throw new Error(`Network response error`);
                 const members = await response.json();
                 if (members.error) throw new Error(members.error);
 
@@ -212,13 +234,20 @@
                 memberListBody.innerHTML = '';
 
                 members.forEach(member => {
+                    // Populate dropdown
                     const option = document.createElement('option');
                     option.value = member.member_id;
                     option.textContent = `${member.name} (${member.member_id})`;
                     memberDropdown.appendChild(option);
 
+                    // Populate table with new columns
                     const row = document.createElement('tr');
-                    row.innerHTML = `<td>${member.member_id}</td><td>${member.name}</td>`;
+                    row.innerHTML = `
+                        <td>${member.member_id}</td>
+                        <td>${member.name}</td>
+                        <td>${member.member_type || ''}</td>
+                        <td>${member.phone_number || ''}</td>
+                    `;
                     memberListBody.appendChild(row);
                 });
             } catch (error) {
@@ -235,11 +264,10 @@
             const data = { action: 'addTransaction', date: document.getElementById('form-date').value, type: document.getElementById('form-type').value, memberId: document.getElementById('form-member').value, category: document.getElementById('form-category').value, amount: document.getElementById('form-amount').value, description: document.getElementById('form-description').value };
 
             try {
-                // Note: 'no-cors' can hide errors. We'll try without it first.
                 const response = await fetch(API_URL, { 
                     method: 'POST',  
                     body: JSON.stringify(data), 
-                    headers: {'Content-Type': 'text/plain;charset=utf-8'} // Apps Script doPost often prefers text/plain
+                    headers: {'Content-Type': 'text/plain;charset=utf-8'}
                 });
                 const result = await response.json();
                 if (result.status !== 'success') throw new Error(result.message);
@@ -272,7 +300,7 @@
                     body: JSON.stringify(data), 
                     headers: {'Content-Type': 'text/plain;charset=utf-8'}
                 });
-                if (!response.ok) throw new Error('Network response was not ok');
+                if (!response.ok) throw new Error('Network response error');
                 const result = await response.json();
 
                 if (result.status === 'success') {
@@ -295,4 +323,3 @@
     </script>
 </body>
 </html>
-
