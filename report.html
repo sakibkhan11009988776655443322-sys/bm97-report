@@ -1,1 +1,130 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>বন্ধু মঙ্গল'৯৭ - আর্থিক সারসংক্ষেপ</title>
+    <style>
+        /* --- সকল স্টাইল এখানে --- */
+        body {
+            font-family: 'Hind Siliguri', Arial, sans-serif;
+            background-color: #1a2a25; /* গাঢ় সবুজ ব্যাকগ্রাউন্ড */
+            color: #eaf0ed;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background-color: #243b34;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+        h1 {
+            text-align: center;
+            color: #81c784; /* হালকা সবুজ */
+            border-bottom: 2px solid #81c784;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .summary-cards {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .card {
+            background-color: #2f5247;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            flex-grow: 1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+            color: #a5d6a7;
+        }
+        .card p {
+            margin: 0;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        #total-income { color: #66bb6a; } /* সবুজ */
+        #total-expense { color: #ef5350; } /* লাল */
+        #current-balance { color: #4db6ac; } /* সায়ান */
 
+        #loader {
+            text-align: center;
+            font-size: 1.2em;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>বন্ধু মঙ্গল'৯৭ - আর্থিক সারসংক্ষেপ</h1>
+
+        <div class="summary-cards">
+            <div class="card">
+                <h3>সর্বমোট আয়</h3>
+                <p id="total-income">৳ ০</p>
+            </div>
+            <div class="card">
+                <h3>সর্বমোট ব্যয়</h3>
+                <p id="total-expense">৳ ০</p>
+            </div>
+            <div class="card">
+                <h3>বর্তমান ব্যালেন্স</h3>
+                <p id="current-balance">৳ ০</p>
+            </div>
+        </div>
+
+        <div id="loader">ডেটা লোড হচ্ছে...</div>
+
+    </div>
+
+    <script>
+        // --- সকল স্ক্রিপ্ট এখানে ---
+
+        // https://script.google.com/macros/s/AKfycbzLEf82zK75CQTj4qbUG92Dlm1atc7HFr_HrJjloq7JG4iOJR5PkiejkgL40v1C-h7dkQ/exec
+        const API_URL = 'আপনার কপি করা Web App URL টি এখানে পেস্ট করুন';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch(API_URL)
+                .then(response => response.json())
+                .then(data => {
+                    let totalIncome = 0;
+                    let totalExpense = 0;
+
+                    if (Array.isArray(data)) {
+                        data.forEach(transaction => {
+                            if (transaction.type === 'আয়' && !isNaN(transaction.amount)) {
+                                totalIncome += parseFloat(transaction.amount);
+                            } else if (transaction.type === 'ব্যয়' && !isNaN(transaction.amount)) {
+                                totalExpense += parseFloat(transaction.amount);
+                            }
+                        });
+                    }
+
+                    const currentBalance = totalIncome - totalExpense;
+
+                    document.getElementById('total-income').textContent = `৳ ${totalIncome.toLocaleString('bn-BD')}`;
+                    document.getElementById('total-expense').textContent = `৳ ${totalExpense.toLocaleString('bn-BD')}`;
+                    document.getElementById('current-balance').textContent = `৳ ${currentBalance.toLocaleString('bn-BD')}`;
+
+                    document.getElementById('loader').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById('loader').textContent = 'ডেটা লোড করা যায়নি।';
+                });
+        });
+    </script>
+
+</body>
+</html>
