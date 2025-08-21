@@ -176,6 +176,7 @@
             loader.style.display = 'block';
             try {
                 const response = await fetch(`${API_URL}?action=getTransactions`);
+                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
 
@@ -201,6 +202,7 @@
         async function loadAdminData() {
             try {
                 const response = await fetch(`${API_URL}?action=getMembers`);
+                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
                 const members = await response.json();
                 if (members.error) throw new Error(members.error);
 
@@ -230,6 +232,66 @@
             const submitBtn = event.target.querySelector('button');
             submitBtn.disabled = true;
 
-            const data = { action
+            const data = { action: 'addTransaction', date: document.getElementById('form-date').value, type: document.getElementById('form-type').value, memberId: document.getElementById('form-member').value, category: document.getElementById('form-category').value, amount: document.getElementById('form-amount').value, description: document.getElementById('form-description').value };
 
+            try {
+                // Note: 'no-cors' can hide errors. We'll try without it first.
+                const response = await fetch(API_URL, { 
+                    method: 'POST',  
+                    body: JSON.stringify(data), 
+                    headers: {'Content-Type': 'text/plain;charset=utf-8'} // Apps Script doPost often prefers text/plain
+                });
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message);
 
+                messageEl.textContent = 'লেনদেন সফলভাবে যোগ করা হয়েছে!';
+                messageEl.style.color = '#66bb6a';
+                event.target.reset();
+                await loadPublicData();
+            } catch (error) {
+                console.error('Error:', error);
+                messageEl.textContent = 'ত্রুটি! লেনদেন যোগ করা যায়নি।';
+                messageEl.style.color = '#ef5050';
+            } finally {
+                submitBtn.disabled = false;
+                setTimeout(() => messageEl.textContent = '', 3000);
+            }
+        }
+
+        async function handleMemberSubmit(event) {
+            event.preventDefault();
+            const messageEl = document.getElementById('member-form-message');
+            const submitBtn = event.target.querySelector('button');
+            submitBtn.disabled = true;
+
+            const data = { action: 'addMember', name: document.getElementById('member-name').value, father_name: document.getElementById('member-father').value, address: document.getElementById('member-address').value, email: document.getElementById('member-email').value, mobile: document.getElementById('member-mobile').value, whatsapp: document.getElementById('member-whatsapp').value, member_type: document.getElementById('member-type').value };
+
+            try {
+                const response = await fetch(API_URL, { 
+                    method: 'POST',  
+                    body: JSON.stringify(data), 
+                    headers: {'Content-Type': 'text/plain;charset=utf-8'}
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    messageEl.textContent = `সদস্য যোগ করা হয়েছে! নতুন আইডি: ${result.newMemberId}`;
+                    messageEl.style.color = '#66bb6a';
+                    event.target.reset();
+                    await loadAdminData();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                messageEl.textContent = 'ত্রুটি! সদস্য যোগ করা যায়নি।';
+                messageEl.style.color = '#ef5050';
+            } finally {
+                submitBtn.disabled = false;
+                setTimeout(() => messageEl.textContent = '', 5000);
+            }
+        }
+    </script>
+</body>
+</html>
