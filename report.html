@@ -3,27 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>বন্ধু মঙ্গল'৯৭ - আর্থিক সারসংক্ষেপ</title>
+    <title>বন্ধু মঙ্গল'৯৭ - অ্যাডমিন প্যানেল</title>
     <style>
-        /* --- সকল স্টাইল এখানে --- */
         body {
             font-family: 'Hind Siliguri', Arial, sans-serif;
-            background-color: #1a2a25; /* গাঢ় সবুজ ব্যাকগ্রাউন্ড */
+            background-color: #1a2a25;
             color: #eaf0ed;
             margin: 0;
             padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         .container {
+            width: 100%;
             max-width: 800px;
-            margin: auto;
             background-color: #243b34;
             padding: 25px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
         }
+        /* লগইন সেকশন */
+        #login-section {
+            text-align: center;
+        }
+        #login-section h1 {
+            color: #81c784;
+        }
+        #login-section input {
+            padding: 12px;
+            font-size: 1em;
+            width: 80%;
+            max-width: 300px;
+            border-radius: 5px;
+            border: 1px solid #4a6b5f;
+            background-color: #1a2a25;
+            color: #eaf0ed;
+            margin-bottom: 15px;
+        }
+        #login-section button {
+            padding: 12px 30px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            background-color: #81c784;
+            color: #1a2a25;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #error-message {
+            color: #ef5350;
+            margin-top: 15px;
+            height: 20px;
+        }
+
+        /* রিপোর্ট সেকশন (লগইনের পর) */
+        #report-section {
+            display: none; /* ডিফল্টভাবে লুকানো থাকবে */
+        }
         h1 {
             text-align: center;
-            color: #81c784; /* হালকা সবুজ */
+            color: #81c784;
             border-bottom: 2px solid #81c784;
             padding-bottom: 10px;
             margin-bottom: 20px;
@@ -41,60 +82,85 @@
             border-radius: 8px;
             text-align: center;
             flex-grow: 1;
+            min-width: 150px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
-        .card h3 {
-            margin: 0 0 10px 0;
-            font-size: 1.1em;
-            color: #a5d6a7;
-        }
-        .card p {
-            margin: 0;
-            font-size: 1.8em;
+        .card h3 { margin: 0 0 10px 0; font-size: 1.1em; color: #a5d6a7; }
+        .card p { margin: 0; font-size: 1.8em; font-weight: bold; }
+        #total-income { color: #66bb6a; }
+        #total-expense { color: #ef5350; }
+        #current-balance { color: #4db6ac; }
+        #loader { text-align: center; font-size: 1.2em; padding: 40px; }
+        .admin-actions { text-align: center; margin-top: 30px; }
+        .admin-actions a {
+            padding: 12px 30px;
+            font-size: 1em;
+            text-decoration: none;
+            border-radius: 5px;
+            background-color: #4db6ac;
+            color: #eaf0ed;
             font-weight: bold;
-        }
-        #total-income { color: #66bb6a; } /* সবুজ */
-        #total-expense { color: #ef5350; } /* লাল */
-        #current-balance { color: #4db6ac; } /* সায়ান */
-
-        #loader {
-            text-align: center;
-            font-size: 1.2em;
-            padding: 40px;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>বন্ধু মঙ্গল'৯৭ - আর্থিক সারসংক্ষেপ</h1>
-
-        <div class="summary-cards">
-            <div class="card">
-                <h3>সর্বমোট আয়</h3>
-                <p id="total-income">৳ ০</p>
-            </div>
-            <div class="card">
-                <h3>সর্বমোট ব্যয়</h3>
-                <p id="total-expense">৳ ০</p>
-            </div>
-            <div class="card">
-                <h3>বর্তমান ব্যালেন্স</h3>
-                <p id="current-balance">৳ ০</p>
-            </div>
+        <div id="login-section">
+            <h1>অ্যাডমিন লগইন</h1>
+            <input type="password" id="password" placeholder="পাসওয়ার্ড দিন">
+            <br>
+            <button onclick="handleLogin()">প্রবেশ করুন</button>
+            <p id="error-message"></p>
         </div>
 
-        <div id="loader">ডেটা লোড হচ্ছে...</div>
-
+        <div id="report-section">
+            <h1>বন্ধু মঙ্গল'৯৭ - আর্থিক সারসংক্ষেপ</h1>
+            <div id="loader">ডেটা লোড হচ্ছে...</div>
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>সর্বমোট আয়</h3>
+                    <p id="total-income">৳ ০</p>
+                </div>
+                <div class="card">
+                    <h3>সর্বমোট ব্যয়</h3>
+                    <p id="total-expense">৳ ০</p>
+                </div>
+                <div class="card">
+                    <h3>বর্তমান ব্যালেন্স</h3>
+                    <p id="current-balance">৳ ০</p>
+                </div>
+            </div>
+            <div class="admin-actions">
+                <a href="আপনার গুগল শিটের লিঙ্ক এখানে দিন" target="_blank">নতুন ডেটা যোগ করুন</a>
+            </div>
+        </div>
     </div>
 
     <script>
         // --- সকল স্ক্রিপ্ট এখানে ---
+        
+        // !! এখানে আপনার App Script URL টি পেস্ট করুন !!
+        const API_URL = 'আপনার Apps Script থেকে পাওয়া Web App URL টি এখানে পেস্ট করুন';
+        
+        // !! আপনার গুগল শিটের লিঙ্ক এখানে দিন (যাতে সহজে যেতে পারেন) !!
+        const GOOGLE_SHEET_URL = 'আপনার গুগল শিটের লিঙ্ক এখানে দিন';
+        
+        function handleLogin() {
+            // !! এখানে আপনার নিজের পছন্দমতো একটি পাসওয়ার্ড দিন !!
+            const correctPassword = "admin123"; 
+            const enteredPassword = document.getElementById('password').value;
+            
+            if (enteredPassword === correctPassword) {
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('report-section').style.display = 'block';
+                loadReportData();
+            } else {
+                document.getElementById('error-message').textContent = 'ভুল পাসওয়ার্ড। আবার চেষ্টা করুন।';
+            }
+        }
 
-        // https://script.google.com/macros/s/AKfycbzLEf82zK75CQTj4qbUG92Dlm1atc7HFr_HrJjloq7JG4iOJR5PkiejkgL40v1C-h7dkQ/exec
-        const API_URL = 'আপনার কপি করা Web App URL টি এখানে পেস্ট করুন';
-
-        document.addEventListener('DOMContentLoaded', function() {
+        function loadReportData() {
             fetch(API_URL)
                 .then(response => response.json())
                 .then(data => {
@@ -110,20 +176,22 @@
                             }
                         });
                     }
-
+                    
                     const currentBalance = totalIncome - totalExpense;
 
                     document.getElementById('total-income').textContent = `৳ ${totalIncome.toLocaleString('bn-BD')}`;
                     document.getElementById('total-expense').textContent = `৳ ${totalExpense.toLocaleString('bn-BD')}`;
                     document.getElementById('current-balance').textContent = `৳ ${currentBalance.toLocaleString('bn-BD')}`;
-
+                    
                     document.getElementById('loader').style.display = 'none';
+                    // লিঙ্কটি আপডেট করা হচ্ছে
+                    document.querySelector('.admin-actions a').href = GOOGLE_SHEET_URL;
                 })
                 .catch(error => {
                     console.error('Error fetching data:', error);
-                    document.getElementById('loader').textContent = 'ডেটা লোড করা যায়নি।';
+                    document.getElementById('loader').textContent = 'ডেটা লোড করা যায়নি। অনুগ্রহ করে API URL এবং শিট পারমিশন চেক করুন।';
                 });
-        });
+        }
     </script>
 
 </body>
