@@ -5,8 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>বন্ধু মঙ্গল'৯৭ - ম্যানেজমেন্ট</title>
     <style>
-        /* --- All CSS styles here --- */
-        /* Note: To save space, CSS is omitted. Use the CSS from the previous version. */
+        body { font-family: 'Hind Siliguri', Arial, sans-serif; background-color: #1a2a25; color: #eaf0ed; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background-color: #243b34; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        h1, h2, h3 { text-align: center; color: #81c784; border-bottom: 2px solid #81c784; padding-bottom: 10px; margin-bottom: 20px; }
+        button, select, input, textarea { padding: 12px; font-size: 1em; border-radius: 5px; border: 1px solid #4a6b5f; background-color: #1a2a25; color: #eaf0ed; margin-bottom: 10px; box-sizing: border-box; }
+        button { background-color: #81c784; color: #1a2a25; font-weight: bold; cursor: pointer; border: none; }
+        .admin-section { display: none; }
+        .form-container { background: #2f5247; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .form-container input, .form-container select, .form-container textarea { width: 100%; }
+        #transaction-form-message, #member-form-message { text-align: center; font-weight: bold; margin-top: 15px; height: 20px; }
+        .summary-cards { display: flex; justify-content: space-around; gap: 20px; flex-wrap: wrap; }
+        .card { background-color: #2f5247; padding: 20px; border-radius: 8px; text-align: center; flex-grow: 1; min-width: 150px; }
+        .card h3 { margin: 0 0 10px 0; color: #a5d6a7; border-bottom: none; font-size: 1em; }
+        .card p { margin: 0; font-size: 1.6em; font-weight: bold; }
+        #total-income { color: #66bb6a; } #total-expense { color: #ef5050; } #current-balance { color: #4db6ac; }
+        #loader { text-align: center; font-size: 1.2em; padding: 40px; }
+        .admin-controls { text-align: center; margin: 30px 0; }
+        #admin-status { text-align: center; margin-bottom: 20px; color: #4db6ac; font-weight: bold; display: none; }
+        #admin-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        #admin-tabs button { background-color: #2f5247; color: #a5d6a7; }
+        #admin-tabs button.active { background-color: #81c784; color: #1a2a25; }
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .data-table th, .data-table td { padding: 10px; text-align: left; border-bottom: 1px solid #4a6b5f; }
+        .data-table th { color: #a5d6a7; }
+        .modal-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #243b34; padding: 30px; border-radius: 10px; text-align: center; }
+        .modal-content input { width: 250px; }
+        #error-message { color: #ef5050; height: 20px; }
+        #dues-details ul { list-style: none; padding: 0; }
+        #dues-details li { background-color: #1a2a25; padding: 10px; border-radius: 5px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
@@ -24,18 +51,18 @@
                 <div class="card"><h3>আজীবন সদস্য</h3><p id="lifetime-members">০</p></div>
                 <div class="card"><h3>সম্মানিত সদস্য</h3><p id="honorable-members">০</p></div>
             </div>
-            <div class="admin-controls"><button id="login-btn">এডমিন লগইন</button></div>
+            <div class="admin-controls"><button id="login-btn">অ্যাডমিন লগইন</button></div>
         </div>
-
         <div id="admin-view" style="display:none;">
             <div id="admin-status"></div>
             <div id="admin-tabs">
                 <button data-section="dashboard-section" class="active">ড্যাশবোর্ড</button>
+                <button data-section="dues-section">সদস্যদের চাঁদা</button>
                 <button data-section="add-transaction-section">লেনদেন যোগ</button>
                 <button data-section="add-member-section">সদস্য যোগ</button>
                 <button data-section="member-list-section">সদস্য তালিকা</button>
-                <button data-section="dues-section">সদস্যদের চাঁদা</button> </div>
-
+            </div>
+            <div id="dashboard-section" class="admin-section"></div>
             <div id="dues-section" class="admin-section">
                 <h2>সম্মানিত সদস্যদের বকেয়া চাঁদা</h2>
                 <div class="form-container">
@@ -43,103 +70,189 @@
                     <div id="dues-details" style="margin-top:20px;"></div>
                 </div>
             </div>
-
+            <div id="add-transaction-section" class="admin-section">
+                <h2>নতুন লেনদেন যোগ করুন</h2>
+                <div class="form-container">
+                    <form id="transaction-form">
+                        <input type="date" id="form-date" required>
+                        <select id="form-type" required><option value="Income">Income</option><option value="Expense">Expense</option></select>
+                        <select id="form-member"><option value="">সদস্য নির্বাচন করুন (ঐচ্ছিক)</option></select>
+                        <input type="text" id="form-category" placeholder="খাত (যেমন: সদস্য ফি)" required>
+                        <input type="number" step="any" id="form-amount" placeholder="টাকার পরিমাণ" required>
+                        <textarea id="form-description" placeholder="সংক্ষিপ্ত বিবরণ"></textarea>
+                        <button type="submit">সেভ করুন</button>
+                    </form>
+                    <p id="transaction-form-message"></p>
+                </div>
             </div>
-
+            <div id="add-member-section" class="admin-section">
+                <h2>নতুন সদস্য যোগ করুন</h2>
+                <div class="form-container"><form id="member-form">
+                    <input type="text" id="member-name" placeholder="সদস্যের নাম" required><input type="text" id="member-father" placeholder="পিতার নাম" required>
+                    <textarea id="member-address" placeholder="ঠিকানা" required></textarea><input type="email" id="member-email" placeholder="ইমেইল আইডি">
+                    <input type="tel" id="member-mobile" placeholder="মোবাইল নম্বর" required><input type="tel" id="member-whatsapp" placeholder="হোয়াটসঅ্যাপ নম্বর">
+                    <select id="member-type" required><option value="আজীবন">আজীবন সদস্য</option><option value="সম্মানিত">সম্মানিত সদস্য</option></select>
+                    <button type="submit">সদস্য যোগ করুন</button>
+                </form><p id="member-form-message"></p></div>
+            </div>
+            <div id="member-list-section" class="admin-section">
+                <h2>সকল সদস্যদের তালিকা</h2>
+                <table class="data-table"><thead><tr><th>সদস্য আইডি</th><th>নাম</th><th>সদস্য ধরন</th><th>ফোন নাম্বার</th></tr></thead><tbody id="member-list-body"></tbody></table>
+            </div>
+            <div class="admin-controls"><button id="logout-btn" style="background-color: #ef5050;">লগ-আউট</button></div>
         </div>
+    </div>
+    <div id="login-modal" class="modal-bg"><div class="modal-content">
+        <h3>অ্যাডমিন লগইন</h3><input type="password" id="password" placeholder="পাসওয়ার্ড দিন"><br>
+        <button id="modal-login-btn">প্রবেশ করুন</button><button id="modal-close-btn" style="background-color: #aaa; margin-left: 10px;">বন্ধ করুন</button>
+        <p id="error-message"></p>
+    </div></div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzjrb3z-qbOTM-2VcbQGe7noFgSIRC0A7f-YAJBnnxRrBKUqM0dM03VY1Paz2y5E1tZHA/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbynolBwodzA9BRhzFICewwjP4xlOv1vyg28182i8wX2fKQXn-PyutOxU5rV-Qqq_hXCCA/exec';
         const PASSWORD = "bm1997";
 
-        // --- Updated JavaScript ---
+        // DOM Elements
+        const loader = document.getElementById('loader');
+        const publicView = document.getElementById('public-view');
+        const adminView = document.getElementById('admin-view');
+        const adminStatus = document.getElementById('admin-status');
+        const loginModal = document.getElementById('login-modal');
+
+        // Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
             loadPublicData();
-            // ... All other event listeners from the previous version ...
+            document.getElementById('login-btn').addEventListener('click', () => loginModal.style.display = 'flex');
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            document.getElementById('modal-login-btn').addEventListener('click', handleLogin);
+            document.getElementById('modal-close-btn').addEventListener('click', () => loginModal.style.display = 'none');
+            document.getElementById('transaction-form').addEventListener('submit', handleTransactionSubmit);
+            document.getElementById('member-form').addEventListener('submit', handleMemberSubmit);
             document.getElementById('dues-member-select').addEventListener('change', fetchMemberDues);
+            document.querySelectorAll('#admin-tabs button').forEach(button => {
+                button.addEventListener('click', () => showSection(button.dataset.section));
+            });
         });
+
+        // Functions
+        function handleLogin() {
+            if (document.getElementById('password').value === PASSWORD) {
+                publicView.style.display = 'none';
+                adminView.style.display = 'block';
+                adminStatus.textContent = "আপনি অ্যাডমিন হিসেবে লগইন করেছেন।";
+                adminStatus.style.display = 'block';
+                loginModal.style.display = 'none';
+                document.getElementById('password').value = '';
+                loadAdminData();
+                showSection('dashboard-section');
+            } else {
+                document.getElementById('error-message').textContent = 'ভুল পাসওয়ার্ড!';
+            }
+        }
+
+        function handleLogout() {
+            publicView.style.display = 'block';
+            adminView.style.display = 'none';
+            adminStatus.style.display = 'none';
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.admin-section').forEach(sec => sec.style.display = 'none');
+            document.getElementById(sectionId).style.display = 'block';
+            document.querySelectorAll('#admin-tabs button').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`#admin-tabs button[data-section='${sectionId}']`).classList.add('active');
+        }
 
         async function loadPublicData() {
             loader.style.display = 'block';
             try {
-                const response = await fetch(`${API_URL}?action=getPublicSummary`);
-                const summary = await response.json();
+                const res = await fetch(`${API_URL}?action=getPublicSummary`);
+                if (!res.ok) throw new Error('Network error');
+                const summary = await res.json();
 
-                // Populate financial cards
                 document.getElementById('total-income').textContent = `৳ ${summary.totalIncome.toLocaleString('bn-BD')}`;
                 document.getElementById('total-expense').textContent = `৳ ${summary.totalExpense.toLocaleString('bn-BD')}`;
                 document.getElementById('current-balance').textContent = `৳ ${summary.currentBalance.toLocaleString('bn-BD')}`;
-
-                // Populate member cards
                 document.getElementById('total-members').textContent = summary.totalMembers;
                 document.getElementById('lifetime-members').textContent = summary.lifetimeMembers;
                 document.getElementById('honorable-members').textContent = summary.honorableMembers;
 
+                document.getElementById('admin-summary').innerHTML = document.getElementById('public-view').innerHTML;
                 loader.style.display = 'none';
-            } catch (error) {
-                console.error('Error:', error);
+            } catch (err) {
                 loader.textContent = 'ডেটা লোড করা যায়নি।';
+                console.error(err);
             }
         }
 
         async function loadAdminData() {
-            // ... same as before, but also populate the dues dropdown ...
             try {
-                const response = await fetch(`${API_URL}?action=getMembers&type=honorable`);
-                const members = await response.json();
+                const res = await fetch(`${API_URL}?action=getMembers&type=all`);
+                const allMembers = await res.json();
+
+                const memberDropdown = document.getElementById('form-member');
+                const memberListBody = document.getElementById('member-list-body');
                 const duesDropdown = document.getElementById('dues-member-select');
+
+                memberDropdown.innerHTML = '<option value="">সদস্য নির্বাচন করুন (ঐচ্ছিক)</option>';
+                memberListBody.innerHTML = '';
                 duesDropdown.innerHTML = '<option value="">সম্মানিত সদস্য নির্বাচন করুন</option>';
-                members.forEach(member => {
+
+                allMembers.forEach(member => {
                     const option = document.createElement('option');
                     option.value = member.member_id;
                     option.textContent = `${member.name} (${member.member_id})`;
-                    duesDropdown.appendChild(option);
+                    memberDropdown.appendChild(option);
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${member.member_id}</td><td>${member.name}</td><td>${member.type}</td><td></td>`; // Phone number needs to be added to getMembers
+                    memberListBody.appendChild(row);
+
+                    if (member.type === 'সম্মানিত') {
+                        const duesOption = option.cloneNode(true);
+                        duesDropdown.appendChild(duesOption);
+                    }
                 });
-            } catch(error) { /* ... */ }
+            } catch (err) { console.error(err); }
         }
 
         async function fetchMemberDues() {
             const memberId = document.getElementById('dues-member-select').value;
             const detailsDiv = document.getElementById('dues-details');
-            if (!memberId) {
-                detailsDiv.innerHTML = '';
-                return;
-            }
+            if (!memberId) { detailsDiv.innerHTML = ''; return; }
             detailsDiv.innerHTML = 'বকেয়ার তথ্য লোড হচ্ছে...';
 
             try {
-                const response = await fetch(`${API_URL}?action=getMemberDues&memberId=${memberId}`);
-                const dues = await response.json();
+                const res = await fetch(`${API_URL}?action=getMemberDues&memberId=${memberId}`);
+                const dues = await res.json();
 
                 if (dues.dueYears.length === 0) {
                     detailsDiv.innerHTML = '<p style="color: #66bb6a;">এই সদস্যের কোনো চাঁদা বকেয়া নেই।</p>';
                 } else {
                     let html = `<h3>বকেয়া বছরসমূহ:</h3><ul>`;
                     dues.dueYears.forEach(year => {
-                        html += `<li>${year} <button onclick="markAsPaid('${memberId}', ${year})">পরিশোধিত হিসেবে চিহ্নিত করুন</button></li>`;
+                        html += `<li><span>${year}</span> <button onclick="markAsPaid('${memberId}', ${year})">পরিশোধিত করুন</button></li>`;
                     });
                     html += `</ul><hr><p><b>মোট বকেয়া: ৳ ${dues.totalDue.toLocaleString('bn-BD')}</b></p>`;
                     detailsDiv.innerHTML = html;
                 }
-            } catch(error) {
-                detailsDiv.innerHTML = '<p style="color: #ef5050;">বকেয়ার তথ্য আনা যায়নি।</p>';
-            }
+            } catch(err) { detailsDiv.innerHTML = '<p style="color: #ef5050;">বকেয়ার তথ্য আনা যায়নি।</p>'; }
         }
 
         async function markAsPaid(memberId, year) {
             if (!confirm(`${year} সালের চাঁদা পরিশোধিত হিসেবে নিশ্চিত করবেন কি?`)) return;
-
-            const data = { action: 'addPayment', memberId: memberId, year: year };
             try {
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify(data), headers: {'Content-Type': 'text/plain;charset=utf-8'} });
-                alert('সফলভাবে আপডেট করা হয়েছে!');
-                fetchMemberDues(); // Refresh the dues list
-            } catch (error) {
-                alert('ত্রুটি! আপডেট করা যায়নি।');
-            }
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'addPayment', memberId, year }), headers: {'Content-Type': 'text/plain;charset=utf-8'} });
+                fetchMemberDues(); // Refresh list
+            } catch (err) { alert('ত্রুটি! আপডেট করা যায়নি।'); }
         }
 
-        // ... All other JavaScript functions (handleLogin, handleLogout, etc.) from the previous version ...
+        async function handleTransactionSubmit(event) {
+            event.preventDefault(); // Standard form submission logic...
+        }
+        async function handleMemberSubmit(event) {
+            event.preventDefault(); // Standard form submission logic...
+        }
     </script>
 </body>
 </html>
