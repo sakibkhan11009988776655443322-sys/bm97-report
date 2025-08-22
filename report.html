@@ -3,79 +3,249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>সদস্য তালিকা পরীক্ষা</title>
+    <title>বন্ধু মঙ্গল'৯৭ - ম্যানেজমেন্ট</title>
     <style>
-        body { font-family: sans-serif; background-color: #f0f0f0; color: #333; padding: 20px; }
-        h1 { text-align: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: white; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        th { background-color: #4CAF50; color: white; }
+        body { font-family: 'Hind Siliguri', Arial, sans-serif; background-color: #1a2a25; color: #eaf0ed; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background-color: #243b34; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        h1, h2, h3 { text-align: center; color: #81c784; border-bottom: 2px solid #81c784; padding-bottom: 10px; margin-bottom: 20px; }
+        button, select, input, textarea { padding: 12px; font-size: 1em; border-radius: 5px; border: 1px solid #4a6b5f; background-color: #1a2a25; color: #eaf0ed; margin-bottom: 10px; box-sizing: border-box; }
+        button { background-color: #81c784; color: #1a2a25; font-weight: bold; cursor: pointer; border: none; }
+        .admin-section { display: none; }
+        .form-container { background: #2f5247; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .form-container input, .form-container select, .form-container textarea { width: 100%; }
+        #transaction-form-message, #member-form-message { text-align: center; font-weight: bold; margin-top: 15px; height: 20px; }
+        .summary-cards { display: flex; justify-content: space-around; gap: 20px; flex-wrap: wrap; }
+        .card { background-color: #2f5247; padding: 20px; border-radius: 8px; text-align: center; flex-grow: 1; min-width: 150px; }
+        .card h3 { margin: 0 0 10px 0; color: #a5d6a7; border-bottom: none; font-size: 1em; }
+        .card p { margin: 0; font-size: 1.6em; font-weight: bold; }
+        #total-income { color: #66bb6a; } #total-expense { color: #ef5050; } #current-balance { color: #4db6ac; }
         #loader { text-align: center; font-size: 1.2em; padding: 40px; }
+        .admin-controls { text-align: center; margin: 30px 0; }
+        #admin-status { text-align: center; margin-bottom: 20px; color: #4db6ac; font-weight: bold; display: none; }
+        #admin-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        #admin-tabs button { background-color: #2f5247; color: #a5d6a7; }
+        #admin-tabs button.active { background-color: #81c784; color: #1a2a25; }
+        .data-table-container { overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .data-table th, .data-table td { padding: 10px; text-align: left; border-bottom: 1px solid #4a6b5f; }
+        .data-table th { color: #a5d6a7; }
+        .modal-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #243b34; padding: 30px; border-radius: 10px; text-align: center; }
+        .modal-content input { width: 250px; }
+        #error-message { color: #ef5050; height: 20px; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <div id="public-view">
+            <div id="public-report">
+                <h1>বন্ধু মঙ্গল'৯৭ - আর্থিক সারসংক্ষেপ</h1>
+                <div id="loader">ডেটা লোড হচ্ছে...</div>
+                <div class="summary-cards">
+                    <div class="card"><h3>সর্বমোট আয়</h3><p id="total-income">৳ ০</p></div>
+                    <div class="card"><h3>সর্বমোট ব্যয়</h3><p id="total-expense">৳ ০</p></div>
+                    <div class="card"><h3>বর্তমান ব্যালেন্স</h3><p id="current-balance">৳ ০</p></div>
+                </div>
+            </div>
+            <div class="admin-controls"><button id="login-btn">অ্যাডমিন লগইন</button></div>
+        </div>
 
-    <h1>সদস্য তালিকা পরীক্ষা</h1>
-    <p id="loader">সদস্যদের তালিকা লোড হচ্ছে...</p>
-
-    <table id="member-table" style="display:none;">
-        <thead>
-            <tr>
-                <th>সদস্য আইডি</th>
-                <th>নাম</th>
-                <th>সদস্য ধরন</th>
-                <th>ফোন নাম্বার</th>
-            </tr>
-        </thead>
-        <tbody id="member-list-body">
-            </tbody>
-    </table>
+        <div id="admin-view" style="display:none;">
+            <div id="admin-status"></div>
+            <div id="admin-tabs">
+                <button data-section="dashboard-section" class="active">ড্যাশবোর্ড</button>
+                <button data-section="add-transaction-section">লেনদেন যোগ</button>
+                <button data-section="add-member-section">সদস্য যোগ</button>
+                <button data-section="member-list-section">সদস্য তালিকা</button>
+            </div>
+            <div id="dashboard-section" class="admin-section"></div>
+            <div id="add-transaction-section" class="admin-section">
+                 <h2>নতুন লেনদেন যোগ করুন</h2>
+                <div class="form-container">
+                    <form id="transaction-form">
+                        <input type="date" id="form-date" required>
+                        <select id="form-type" required><option value="Income">Income</option><option value="Expense">Expense</option></select>
+                        <select id="form-member"><option value="">সদস্য নির্বাচন করুন (ঐচ্ছিক)</option></select>
+                        <input type="text" id="form-category" placeholder="খাত (যেমন: সদস্য ফি)" required>
+                        <input type="number" step="any" id="form-amount" placeholder="টাকার পরিমাণ" required>
+                        <textarea id="form-description" placeholder="সংক্ষিপ্ত বিবরণ"></textarea>
+                        <button type="submit">সেভ করুন</button>
+                    </form>
+                    <p id="transaction-form-message"></p>
+                </div>
+            </div>
+            <div id="add-member-section" class="admin-section">
+                 <h2>নতুন সদস্য যোগ করুন</h2>
+                <div class="form-container"><form id="member-form">
+                    <input type="text" id="member-name" placeholder="সদস্যের নাম" required><input type="text" id="member-father" placeholder="পিতার নাম" required>
+                    <textarea id="member-address" placeholder="ঠিকানা" required></textarea><input type="email" id="member-email" placeholder="ইমেইল আইডি">
+                    <input type="tel" id="member-mobile" placeholder="মোবাইল নম্বর" required><input type="tel" id="member-whatsapp" placeholder="হোয়াটসঅ্যাপ নম্বর">
+                    <select id="member-type" required><option value="আজীবন">আজীবন সদস্য</option><option value="সম্মানিত">সম্মানিত সদস্য</option></select>
+                    <button type="submit">সদস্য যোগ করুন</button>
+                </form><p id="member-form-message"></p></div>
+            </div>
+            <div id="member-list-section" class="admin-section">
+                <h2>সকল সদস্যদের তালিকা</h2>
+                <div class="data-table-container">
+                    <table class="data-table"><thead><tr><th>সদস্য আইডি</th><th>নাম</th><th>সদস্য ধরন</th><th>ফোন নাম্বার</th></tr></thead><tbody id="member-list-body"></tbody></table>
+                </div>
+            </div>
+            <div class="admin-controls"><button id="logout-btn" style="background-color: #ef5050;">লগ-আউট</button></div>
+        </div>
+    </div>
+    <div id="login-modal" class="modal-bg"><div class="modal-content">
+        <h3>অ্যাডমিন লগইন</h3><input type="password" id="password" placeholder="পাসওয়ার্ড দিন"><br>
+        <button id="modal-login-btn">প্রবেশ করুন</button><button id="modal-close-btn" style="background-color: #aaa; margin-left: 10px;">বন্ধ করুন</button>
+        <p id="error-message"></p>
+    </div></div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzIAk4o6p6TrHEsDqrGif_9UH0MJzD5l1u3JtamrSyOZjTRbYNj_sgXjQkQ8CMPB3usrw/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzwsiQMz2HPsSzc7BkV3TMrOfZjZ3_iGIOoNTIxDh3x69acQm0a7B3kS6g5S0GIY063ow/exec';
+        const PASSWORD = "bm1997";
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            const loader = document.getElementById('loader');
-            const table = document.getElementById('member-table');
-            const tableBody = document.getElementById('member-list-body');
+        const $ = (selector) => document.getElementById(selector);
 
-            try {
-                const response = await fetch(API_URL);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const members = await response.json();
-
-                if (members.error) {
-                    throw new Error(members.error);
-                }
-
-                if (members.length === 0) {
-                    loader.textContent = 'কোনো সদস্য খুঁজে পাওয়া যায়নি।';
-                    return;
-                }
-
-                // তালিকা খালি করে নতুন ডেটা যোগ করা হচ্ছে
-                tableBody.innerHTML = ''; 
-                members.forEach(member => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${member.member_id || 'N/A'}</td>
-                        <td>${member.name || 'N/A'}</td>
-                        <td>${member.member_type || 'N/A'}</td>
-                        <td>${member.phone_number || 'N/A'}</td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-
-                loader.style.display = 'none';
-                table.style.display = 'table';
-
-            } catch (error) {
-                loader.textContent = 'ত্রুটি! ডেটা লোড করা যায়নি। বিস্তারিত: ' + error.message;
-                console.error('Fetch error:', error);
-            }
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPublicData();
+            $('login-btn').addEventListener('click', () => $('login-modal').style.display = 'flex');
+            $('logout-btn').addEventListener('click', handleLogout);
+            $('modal-login-btn').addEventListener('click', handleLogin);
+            $('modal-close-btn').addEventListener('click', () => $('login-modal').style.display = 'none');
+            $('transaction-form').addEventListener('submit', handleTransactionSubmit);
+            $('member-form').addEventListener('submit', handleMemberSubmit);
+            document.querySelectorAll('#admin-tabs button').forEach(button => {
+                button.addEventListener('click', () => showSection(button.dataset.section));
+            });
         });
+
+        function handleLogin() {
+            if ($('password').value === PASSWORD) {
+                $('public-view').style.display = 'none';
+                $('admin-view').style.display = 'block';
+                $('admin-status').textContent = "আপনি অ্যাডমিন হিসেবে লগইন করেছেন।";
+                $('admin-status').style.display = 'block';
+                $('login-modal').style.display = 'none';
+                $('password').value = '';
+                $('admin-summary').innerHTML = $('public-report').innerHTML;
+                loadAdminData();
+                showSection('dashboard-section');
+            } else {
+                $('error-message').textContent = 'ভুল পাসওয়ার্ড!';
+            }
+        }
+
+        function handleLogout() {
+            $('public-view').style.display = 'block';
+            $('admin-view').style.display = 'none';
+            $('admin-status').style.display = 'none';
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.admin-section').forEach(sec => sec.style.display = 'none');
+            $(sectionId).style.display = 'block';
+            document.querySelectorAll('#admin-tabs button').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`#admin-tabs button[data-section='${sectionId}']`).classList.add('active');
+        }
+
+        async function loadPublicData() {
+            const loader = $('loader');
+            loader.textContent = 'ডেটা লোড হচ্ছে...';
+            loader.style.display = 'block';
+            try {
+                const res = await fetch(`${API_URL}?action=getTransactions`);
+                if (!res.ok) throw new Error('Network error');
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                let totalIncome = 0, totalExpense = 0;
+                if (Array.isArray(data)) {
+                    data.forEach(t => {
+                        if (t.type === 'Income' && !isNaN(t.amount)) totalIncome += parseFloat(t.amount);
+                        else if (t.type === 'Expense' && !isNaN(t.amount)) totalExpense += parseFloat(t.amount);
+                    });
+                }
+                $('total-income').textContent = `৳ ${totalIncome.toLocaleString('bn-BD')}`;
+                $('total-expense').textContent = `৳ ${totalExpense.toLocaleString('bn-BD')}`;
+                $('current-balance').textContent = `৳ ${(totalIncome - totalExpense).toLocaleString('bn-BD')}`;
+                loader.style.display = 'none';
+            } catch (err) {
+                loader.textContent = 'ডেটা লোড করা যায়নি।';
+                console.error(err);
+            }
+        }
+
+        async function loadAdminData() {
+            try {
+                const res = await fetch(`${API_URL}?action=getMembers`);
+                const members = await res.json();
+
+                const memberDropdown = $('form-member');
+                const memberListBody = $('member-list-body');
+                memberDropdown.innerHTML = '<option value="">সদস্য নির্বাচন করুন (ঐচ্ছিক)</option>';
+                memberListBody.innerHTML = '';
+
+                members.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.member_id;
+                    option.textContent = `${member.name} (${member.member_id})`;
+                    memberDropdown.appendChild(option);
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${member.member_id}</td><td>${member.name}</td><td>${member.member_type || ''}</td><td>${member.phone_number || ''}</td>`;
+                    memberListBody.appendChild(row);
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        async function handleTransactionSubmit(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('button');
+            const msg = $('transaction-form-message');
+            btn.disabled = true;
+            msg.textContent = 'সেভ হচ্ছে...';
+
+            const data = { action: 'addTransaction', date: $('form-date').value, type: $('form-type').value, memberId: $('form-member').value, category: $('form-category').value, amount: $('form-amount').value, description: $('form-description').value };
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(data) });
+                const result = await res.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                msg.textContent = 'সফলভাবে সেভ হয়েছে!';
+                msg.style.color = '#66bb6a';
+                event.target.reset();
+                await loadPublicData();
+            } catch (err) {
+                msg.textContent = 'ত্রুটি! সেভ করা যায়নি।';
+                msg.style.color = '#ef5050';
+            } finally {
+                btn.disabled = false;
+                setTimeout(() => msg.textContent = '', 3000);
+            }
+        }
+
+        async function handleMemberSubmit(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('button');
+            const msg = $('member-form-message');
+            btn.disabled = true;
+            msg.textContent = 'সেভ হচ্ছে...';
+
+            const data = { action: 'addMember', name: $('member-name').value, father_name: $('member-father').value, address: $('member-address').value, email: $('member-email').value, mobile: $('member-mobile').value, whatsapp: $('member-whatsapp').value, member_type: $('member-type').value };
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(data) });
+                const result = await res.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                msg.textContent = `সদস্য যোগ করা হয়েছে! নতুন আইডি: ${result.newMemberId}`;
+                msg.style.color = '#66bb6a';
+                event.target.reset();
+                await loadAdminData();
+            } catch (err) {
+                msg.textContent = 'ত্রুটি! সদস্য যোগ করা যায়নি।';
+                msg.style.color = '#ef5050';
+            } finally {
+                btn.disabled = false;
+                setTimeout(() => msg.textContent = '', 5000);
+            }
+        }
     </script>
 </body>
 </html>
