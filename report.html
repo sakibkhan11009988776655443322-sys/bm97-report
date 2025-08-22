@@ -71,8 +71,31 @@
                     <div id="dues-details" style="margin-top:20px;"></div>
                 </div>
             </div>
-            <div id="add-transaction-section" class="admin-section"><h2>...</h2></div>
-            <div id="add-member-section" class="admin-section"><h2>...</h2></div>
+            <div id="add-transaction-section" class="admin-section">
+                <h2>নতুন লেনদেন যোগ করুন</h2>
+                <div class="form-container">
+                    <form id="transaction-form">
+                        <input type="date" id="form-date" required>
+                        <select id="form-type" required><option value="Income">Income</option><option value="Expense">Expense</option></select>
+                        <select id="form-member"><option value="">সদস্য নির্বাচন করুন (ঐচ্ছিক)</option></select>
+                        <input type="text" id="form-category" placeholder="খাত (যেমন: সদস্য ফি)" required>
+                        <input type="number" step="any" id="form-amount" placeholder="টাকার পরিমাণ" required>
+                        <textarea id="form-description" placeholder="সংক্ষিপ্ত বিবরণ"></textarea>
+                        <button type="submit">সেভ করুন</button>
+                    </form>
+                    <p id="transaction-form-message"></p>
+                </div>
+            </div>
+            <div id="add-member-section" class="admin-section">
+                <h2>নতুন সদস্য যোগ করুন</h2>
+                <div class="form-container"><form id="member-form">
+                    <input type="text" id="member-name" placeholder="সদস্যের নাম" required><input type="text" id="member-father" placeholder="পিতার নাম" required>
+                    <textarea id="member-address" placeholder="ঠিকানা" required></textarea><input type="email" id="member-email" placeholder="ইমেইল আইডি">
+                    <input type="tel" id="member-mobile" placeholder="মোবাইল নম্বর" required><input type="tel" id="member-whatsapp" placeholder="হোয়াটসঅ্যাপ নম্বর">
+                    <select id="member-type" required><option value="আজীবন">আজীবন সদস্য</option><option value="সম্মানিত">সম্মানিত সদস্য</option></select>
+                    <button type="submit">সদস্য যোগ করুন</button>
+                </form><p id="member-form-message"></p></div>
+            </div>
             <div id="member-list-section" class="admin-section">
                 <h2>সকল সদস্যদের তালিকা</h2>
                 <div class="data-table-container">
@@ -100,17 +123,9 @@
             $('logout-btn').addEventListener('click', handleLogout);
             $('modal-login-btn').addEventListener('click', handleLogin);
             $('modal-close-btn').addEventListener('click', () => $('login-modal').style.display = 'none');
-
-            // Add forms and tabs event listeners later to avoid error if elements don't exist
-            const transactionForm = $('transaction-form');
-            if (transactionForm) transactionForm.addEventListener('submit', handleTransactionSubmit);
-
-            const memberForm = $('member-form');
-            if (memberForm) memberForm.addEventListener('submit', handleMemberSubmit);
-
-            const duesSelect = $('dues-member-select');
-            if (duesSelect) duesSelect.addEventListener('change', fetchMemberDues);
-
+            $('transaction-form').addEventListener('submit', handleTransactionSubmit);
+            $('member-form').addEventListener('submit', handleMemberSubmit);
+            $('dues-member-select').addEventListener('change', fetchMemberDues);
             document.querySelectorAll('#admin-tabs button').forEach(button => {
                 button.addEventListener('click', () => showSection(button.dataset.section));
             });
@@ -124,7 +139,8 @@
                 $('admin-status').style.display = 'block';
                 $('login-modal').style.display = 'none';
                 $('password').value = '';
-                $('dashboard-section').innerHTML = $('public-view').innerHTML; // Copy public view to admin dashboard
+                $('dashboard-section').innerHTML = $('public-view').innerHTML;
+                $('dashboard-section').querySelector('#login-btn').style.display = 'none'; // Hide login button from dashboard copy
                 loadAdminData();
                 showSection('dashboard-section');
             } else {
@@ -174,22 +190,27 @@
                 const res = await fetch(`${API_URL}?action=getMembers&type=all`);
                 const allMembers = await res.json();
 
+                const memberDropdown = $('form-member');
                 const memberListBody = $('member-list-body');
                 const duesDropdown = $('dues-member-select');
 
+                memberDropdown.innerHTML = '<option value="">সদস্য নির্বাচন করুন (ঐচ্ছিক)</option>';
                 memberListBody.innerHTML = '';
                 duesDropdown.innerHTML = '<option value="">সম্মানিত সদস্য নির্বাচন করুন</option>';
 
                 allMembers.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.member_id;
+                    option.textContent = `${member.name} (${member.member_id})`;
+                    memberDropdown.appendChild(option);
+
                     const row = document.createElement('tr');
                     row.innerHTML = `<td>${member.member_id}</td><td>${member.name}</td><td>${member.member_type || ''}</td><td>${member.phone_number || ''}</td>`;
                     memberListBody.appendChild(row);
 
                     if (member.member_type === 'সম্মানিত') {
-                        const option = document.createElement('option');
-                        option.value = member.member_id;
-                        option.textContent = `${member.name} (${member.member_id})`;
-                        duesDropdown.appendChild(option);
+                        const duesOption = option.cloneNode(true);
+                        duesDropdown.appendChild(duesOption);
                     }
                 });
             } catch (err) { console.error(err); }
@@ -209,20 +230,13 @@
                 if (dues.dueYears.length === 0) {
                     detailsDiv.innerHTML = '<p style="color: #66bb6a;">এই সদস্যের কোনো চাঁদা বকেয়া নেই।</p>';
                 } else {
+                    const memberName = $('dues-member-select').options[$('dues-member-select').selectedIndex].text;
                     let html = `<h3>বকেয়া বছরসমূহ:</h3><ul>`;
                     dues.dueYears.forEach(year => {
-                        html += `<li><span>${year}</span> <button data-member-id="${memberId}" data-year="${year}" data-member-name="${$('dues-member-select').options[$('dues-member-select').selectedIndex].text}">পরিশোধিত করুন</button></li>`;
+                        html += `<li><span>${year}</span> <button onclick="markAsPaid('${memberId}', ${year}, '${memberName}')">পরিশোধিত করুন</button></li>`;
                     });
                     html += `</ul><hr><p><b>মোট বকেয়া: ৳ ${dues.totalDue.toLocaleString('bn-BD')}</b></p>`;
                     detailsDiv.innerHTML = html;
-
-                    // Add event listeners to the new buttons
-                    detailsDiv.querySelectorAll('button').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            const { memberId, year, memberName } = e.target.dataset;
-                            markAsPaid(memberId, year, memberName);
-                        });
-                    });
                 }
             } catch(err) { 
                 detailsDiv.innerHTML = `<p style="color: #ef5050;">বকেয়ার তথ্য আনা যায়নি। (${err.message})</p>`;
@@ -235,13 +249,61 @@
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'addPayment', memberId, year, memberName }), headers: {'Content-Type': 'text/plain;charset=utf-8'} });
                 const result = await res.json();
                 if (result.status !== 'success') throw new Error(result.message);
-                await fetchMemberDues(); // Refresh list
-                await loadPublicData(); // Refresh public data as a payment is a transaction
+                await fetchMemberDues();
+                await loadPublicData();
             } catch (err) { alert('ত্রুটি! আপডেট করা যায়নি।'); }
         }
-        // The handleTransactionSubmit and handleMemberSubmit functions are complex and will be added back once this base is confirmed working.
-        function handleTransactionSubmit(event) { event.preventDefault(); alert("Feature coming soon!");}
-        function handleMemberSubmit(event) { event.preventDefault(); alert("Feature coming soon!");}
+
+        async function handleTransactionSubmit(event) {
+            event.preventDefault(); 
+            const btn = event.target.querySelector('button');
+            const msg = $('transaction-form-message');
+            btn.disabled = true;
+            msg.textContent = 'সেভ হচ্ছে...';
+
+            const data = { action: 'addTransaction', date: $('form-date').value, type: $('form-type').value, memberId: $('form-member').value, category: $('form-category').value, amount: $('form-amount').value, description: $('form-description').value };
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(data), headers: {'Content-Type': 'text/plain;charset=utf-8'} });
+                const result = await res.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                msg.textContent = 'সফলভাবে সেভ হয়েছে!';
+                msg.style.color = '#66bb6a';
+                event.target.reset();
+                await loadPublicData();
+            } catch (err) {
+                msg.textContent = 'ত্রুটি! সেভ করা যায়নি।';
+                msg.style.color = '#ef5050';
+            } finally {
+                btn.disabled = false;
+                setTimeout(() => msg.textContent = '', 3000);
+            }
+        }
+        async function handleMemberSubmit(event) {
+            event.preventDefault(); 
+            const btn = event.target.querySelector('button');
+            const msg = $('member-form-message');
+            btn.disabled = true;
+            msg.textContent = 'সেভ হচ্ছে...';
+
+            const data = { action: 'addMember', name: $('member-name').value, father_name: $('member-father').value, address: $('member-address').value, email: $('member-email').value, mobile: $('member-mobile').value, whatsapp: $('member-whatsapp').value, member_type: $('member-type').value };
+             try {
+                const res = await fetch(API_URL, { method: 'POST',  body: JSON.stringify(data), headers: {'Content-Type': 'text/plain;charset=utf-8'} });
+                if (!res.ok) throw new Error('Network error');
+                const result = await res.json();
+                if (result.status === 'success') {
+                    msg.textContent = `সদস্য যোগ করা হয়েছে! নতুন আইডি: ${result.newMemberId}`;
+                    msg.style.color = '#66bb6a';
+                    event.target.reset();
+                    await loadAdminData();
+                } else { throw new Error(result.message); }
+            } catch (err) {
+                msg.textContent = 'ত্রুটি! সদস্য যোগ করা যায়নি।';
+                msg.style.color = '#ef5050';
+            } finally {
+                btn.disabled = false;
+                setTimeout(() => msg.textContent = '', 5000);
+            }
+        }
     </script>
 </body>
 </html>
