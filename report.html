@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>বন্ধু মঙ্গল'৯৭ - ম্যানেজমেন্ট</title>
     <style>
-        body { font-family: 'Hind Siliguri', Arial, sans-serif; background-color: #1a2a25; color: #eaf0ed; margin: 0; padding: 20px; }
+        /* All CSS styles from the previous complete version */
+         body { font-family: 'Hind Siliguri', Arial, sans-serif; background-color: #1a2a25; color: #eaf0ed; margin: 0; padding: 20px; }
         .container { max-width: 800px; margin: auto; background-color: #243b34; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
         h1, h2, h3 { text-align: center; color: #81c784; border-bottom: 2px solid #81c784; padding-bottom: 10px; margin-bottom: 20px; }
         button, select, input, textarea { padding: 12px; font-size: 1em; border-radius: 5px; border: 1px solid #4a6b5f; background-color: #1a2a25; color: #eaf0ed; margin-bottom: 10px; box-sizing: border-box; }
@@ -25,7 +26,7 @@
         #admin-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         #admin-tabs button { background-color: #2f5247; color: #a5d6a7; }
         #admin-tabs button.active { background-color: #81c784; color: #1a2a25; }
-        .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; overflow-x: auto; }
         .data-table th, .data-table td { padding: 10px; text-align: left; border-bottom: 1px solid #4a6b5f; }
         .data-table th { color: #a5d6a7; }
         .modal-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
@@ -64,7 +65,7 @@
             </div>
             <div id="dashboard-section" class="admin-section"></div>
             <div id="dues-section" class="admin-section">
-                <h2>সম্মানিত সদস্যদের বকেয়া চাঁদা</h2>
+                 <h2>সম্মানিত সদস্যদের বকেয়া চাঁদা</h2>
                 <div class="form-container">
                     <select id="dues-member-select"><option value="">সম্মানিত সদস্য নির্বাচন করুন</option></select>
                     <div id="dues-details" style="margin-top:20px;"></div>
@@ -97,7 +98,9 @@
             </div>
             <div id="member-list-section" class="admin-section">
                 <h2>সকল সদস্যদের তালিকা</h2>
-                <table class="data-table"><thead><tr><th>সদস্য আইডি</th><th>নাম</th><th>সদস্য ধরন</th><th>ফোন নাম্বার</th></tr></thead><tbody id="member-list-body"></tbody></table>
+                <div style="overflow-x:auto;">
+                    <table class="data-table"><thead><tr><th>সদস্য আইডি</th><th>নাম</th><th>সদস্য ধরন</th><th>ফোন নাম্বার</th></tr></thead><tbody id="member-list-body"></tbody></table>
+                </div>
             </div>
             <div class="admin-controls"><button id="logout-btn" style="background-color: #ef5050;">লগ-আউট</button></div>
         </div>
@@ -109,78 +112,86 @@
     </div></div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbynolBwodzA9BRhzFICewwjP4xlOv1vyg28182i8wX2fKQXn-PyutOxU5rV-Qqq_hXCCA/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzHXfIULbzKClFnMzndVnDWUuTGc93M3Wd-hi0XKt10fptw_n7L7FqGgCBIvXEVo_KgxA/exec';
         const PASSWORD = "bm1997";
 
-        // DOM Elements
-        const loader = document.getElementById('loader');
-        const publicView = document.getElementById('public-view');
-        const adminView = document.getElementById('admin-view');
-        const adminStatus = document.getElementById('admin-status');
-        const loginModal = document.getElementById('login-modal');
+        // All JavaScript functions from the previous complete version, with the following changes:
 
-        // Event Listeners
+        // --- Helper to safely get DOM elements ---
+        const $ = (selector) => document.getElementById(selector);
+
+        // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
             loadPublicData();
-            document.getElementById('login-btn').addEventListener('click', () => loginModal.style.display = 'flex');
-            document.getElementById('logout-btn').addEventListener('click', handleLogout);
-            document.getElementById('modal-login-btn').addEventListener('click', handleLogin);
-            document.getElementById('modal-close-btn').addEventListener('click', () => loginModal.style.display = 'none');
-            document.getElementById('transaction-form').addEventListener('submit', handleTransactionSubmit);
-            document.getElementById('member-form').addEventListener('submit', handleMemberSubmit);
-            document.getElementById('dues-member-select').addEventListener('change', fetchMemberDues);
+            $('login-btn').addEventListener('click', () => $('login-modal').style.display = 'flex');
+            $('logout-btn').addEventListener('click', handleLogout);
+            $('modal-login-btn').addEventListener('click', handleLogin);
+            $('modal-close-btn').addEventListener('click', () => $('login-modal').style.display = 'none');
+            $('transaction-form').addEventListener('submit', handleTransactionSubmit);
+            $('member-form').addEventListener('submit', handleMemberSubmit);
+            $('dues-member-select').addEventListener('change', fetchMemberDues);
             document.querySelectorAll('#admin-tabs button').forEach(button => {
                 button.addEventListener('click', () => showSection(button.dataset.section));
             });
         });
 
-        // Functions
+        // --- Main Functions ---
         function handleLogin() {
-            if (document.getElementById('password').value === PASSWORD) {
-                publicView.style.display = 'none';
-                adminView.style.display = 'block';
-                adminStatus.textContent = "আপনি অ্যাডমিন হিসেবে লগইন করেছেন।";
-                adminStatus.style.display = 'block';
-                loginModal.style.display = 'none';
-                document.getElementById('password').value = '';
+            if ($('password').value === PASSWORD) {
+                $('public-view').style.display = 'none';
+                $('admin-view').style.display = 'block';
+                $('admin-status').textContent = "আপনি অ্যাডমিন হিসেবে লগইন করেছেন।";
+                $('admin-status').style.display = 'block';
+                $('login-modal').style.display = 'none';
+                $('password').value = '';
+                // FIX: Copy public summary to admin dashboard AFTER login
+                $('admin-summary').innerHTML = $('public-report').innerHTML;
                 loadAdminData();
                 showSection('dashboard-section');
             } else {
-                document.getElementById('error-message').textContent = 'ভুল পাসওয়ার্ড!';
+                $('error-message').textContent = 'ভুল পাসওয়ার্ড!';
             }
         }
 
         function handleLogout() {
-            publicView.style.display = 'block';
-            adminView.style.display = 'none';
-            adminStatus.style.display = 'none';
+            $('public-view').style.display = 'block';
+            $('admin-view').style.display = 'none';
+            $('admin-status').style.display = 'none';
         }
 
         function showSection(sectionId) {
             document.querySelectorAll('.admin-section').forEach(sec => sec.style.display = 'none');
-            document.getElementById(sectionId).style.display = 'block';
+            $(sectionId).style.display = 'block';
             document.querySelectorAll('#admin-tabs button').forEach(btn => btn.classList.remove('active'));
             document.querySelector(`#admin-tabs button[data-section='${sectionId}']`).classList.add('active');
         }
 
         async function loadPublicData() {
+            const loader = $('loader');
+            loader.textContent = 'ডেটা লোড হচ্ছে...';
             loader.style.display = 'block';
             try {
                 const res = await fetch(`${API_URL}?action=getPublicSummary`);
                 if (!res.ok) throw new Error('Network error');
                 const summary = await res.json();
+                if (summary.error) throw new Error(summary.error);
 
-                document.getElementById('total-income').textContent = `৳ ${summary.totalIncome.toLocaleString('bn-BD')}`;
-                document.getElementById('total-expense').textContent = `৳ ${summary.totalExpense.toLocaleString('bn-BD')}`;
-                document.getElementById('current-balance').textContent = `৳ ${summary.currentBalance.toLocaleString('bn-BD')}`;
-                document.getElementById('total-members').textContent = summary.totalMembers;
-                document.getElementById('lifetime-members').textContent = summary.lifetimeMembers;
-                document.getElementById('honorable-members').textContent = summary.honorableMembers;
+                $('total-income').textContent = `৳ ${summary.totalIncome.toLocaleString('bn-BD')}`;
+                $('total-expense').textContent = `৳ ${summary.totalExpense.toLocaleString('bn-BD')}`;
+                $('current-balance').textContent = `৳ ${summary.currentBalance.toLocaleString('bn-BD')}`;
+                $('total-members').textContent = summary.totalMembers;
+                $('lifetime-members').textContent = summary.lifetimeMembers;
+                $('honorable-members').textContent = summary.honorableMembers;
 
-                document.getElementById('admin-summary').innerHTML = document.getElementById('public-view').innerHTML;
+                // This will be copied to admin dashboard on login
                 loader.style.display = 'none';
             } catch (err) {
-                loader.textContent = 'ডেটা লোড করা যায়নি।';
+                // FIX: Keep the loader text, don't overwrite if successful data is already there.
+                if ($('total-members').textContent === '0') {
+                   loader.textContent = 'ডেটা লোড করা যায়নি।';
+                } else {
+                   loader.style.display = 'none';
+                }
                 console.error(err);
             }
         }
@@ -190,9 +201,9 @@
                 const res = await fetch(`${API_URL}?action=getMembers&type=all`);
                 const allMembers = await res.json();
 
-                const memberDropdown = document.getElementById('form-member');
-                const memberListBody = document.getElementById('member-list-body');
-                const duesDropdown = document.getElementById('dues-member-select');
+                const memberDropdown = $('form-member');
+                const memberListBody = $('member-list-body');
+                const duesDropdown = $('dues-member-select');
 
                 memberDropdown.innerHTML = '<option value="">সদস্য নির্বাচন করুন (ঐচ্ছিক)</option>';
                 memberListBody.innerHTML = '';
@@ -204,11 +215,12 @@
                     option.textContent = `${member.name} (${member.member_id})`;
                     memberDropdown.appendChild(option);
 
+                    // FIX: Display phone number and member type correctly
                     const row = document.createElement('tr');
-                    row.innerHTML = `<td>${member.member_id}</td><td>${member.name}</td><td>${member.type}</td><td></td>`; // Phone number needs to be added to getMembers
+                    row.innerHTML = `<td>${member.member_id}</td><td>${member.name}</td><td>${member.member_type || 'N/A'}</td><td>${member.phone_number || 'N/A'}</td>`;
                     memberListBody.appendChild(row);
 
-                    if (member.type === 'সম্মানিত') {
+                    if (member.member_type === 'সম্মানিত') {
                         const duesOption = option.cloneNode(true);
                         duesDropdown.appendChild(duesOption);
                     }
@@ -216,9 +228,10 @@
             } catch (err) { console.error(err); }
         }
 
+        // All other functions (fetchMemberDues, markAsPaid, handleTransactionSubmit, handleMemberSubmit) are the same
         async function fetchMemberDues() {
-            const memberId = document.getElementById('dues-member-select').value;
-            const detailsDiv = document.getElementById('dues-details');
+            const memberId = $('dues-member-select').value;
+            const detailsDiv = $('dues-details');
             if (!memberId) { detailsDiv.innerHTML = ''; return; }
             detailsDiv.innerHTML = 'বকেয়ার তথ্য লোড হচ্ছে...';
 
@@ -248,10 +261,50 @@
         }
 
         async function handleTransactionSubmit(event) {
-            event.preventDefault(); // Standard form submission logic...
+            event.preventDefault(); 
+            const messageEl = $('transaction-form-message');
+            const submitBtn = event.target.querySelector('button');
+            submitBtn.disabled = true;
+            const data = { action: 'addTransaction', date: $('form-date').value, type: $('form-type').value, memberId: $('form-member').value, category: $('form-category').value, amount: $('form-amount').value, description: $('form-description').value };
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(data), headers: {'Content-Type': 'text/plain;charset=utf-8'} });
+                const result = await res.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                messageEl.textContent = 'লেনদেন যোগ করা হয়েছে!';
+                messageEl.style.color = '#66bb6a';
+                event.target.reset();
+                await loadPublicData();
+            } catch (err) {
+                messageEl.textContent = 'ত্রুটি! লেনদেন যোগ করা যায়নি।';
+                messageEl.style.color = '#ef5050';
+            } finally {
+                submitBtn.disabled = false;
+                setTimeout(() => messageEl.textContent = '', 3000);
+            }
         }
         async function handleMemberSubmit(event) {
-            event.preventDefault(); // Standard form submission logic...
+            event.preventDefault(); 
+            const messageEl = $('member-form-message');
+            const submitBtn = event.target.querySelector('button');
+            submitBtn.disabled = true;
+            const data = { action: 'addMember', name: $('member-name').value, father_name: $('member-father').value, address: $('member-address').value, email: $('member-email').value, mobile: $('member-mobile').value, whatsapp: $('member-whatsapp').value, member_type: $('member-type').value };
+             try {
+                const res = await fetch(API_URL, { method: 'POST',  body: JSON.stringify(data), headers: {'Content-Type': 'text/plain;charset=utf-8'} });
+                if (!res.ok) throw new Error('Network error');
+                const result = await res.json();
+                if (result.status === 'success') {
+                    messageEl.textContent = `সদস্য যোগ করা হয়েছে! নতুন আইডি: ${result.newMemberId}`;
+                    messageEl.style.color = '#66bb6a';
+                    event.target.reset();
+                    await loadAdminData();
+                } else { throw new Error(result.message); }
+            } catch (err) {
+                messageEl.textContent = 'ত্রুটি! সদস্য যোগ করা যায়নি।';
+                messageEl.style.color = '#ef5050';
+            } finally {
+                submitBtn.disabled = false;
+                setTimeout(() => messageEl.textContent = '', 5000);
+            }
         }
     </script>
 </body>
